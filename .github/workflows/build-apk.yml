@@ -69,8 +69,8 @@ jobs:
           if [ -n "$KS_B64" ]; then
             echo "$KS_B64" | base64 -d > release.jks
           else
-            echo "::warning::İmza açarı yoxdur — müvəqqəti açarla imzalanır"
-            keytool -genkeypair -keystore release.jks -alias brainykids -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Brainy Kids Test"
+            echo "::notice::Sınaq açarı ilə imzalanır (signing/test-key.jks)"
+            cp signing/test-key.jks release.jks
             KS_PASS=android; KS_ALIAS=brainykids
           fi
           $BT/zipalign -p -f 4 $APK aligned.apk
