@@ -89,7 +89,7 @@ function fmtTime(sec: number) {
 
 function ParentPanel() {
   const { t, data, setData } = useStore();
-  const [pid, setPid] = useState(data.activeId ?? data.profiles[0]?.id);
+  const [pid, setPid] = useState<string | undefined>(data.activeId ?? data.profiles[0]?.id);
   const p = data.profiles.find((x) => x.id === pid);
   const [confirm, setConfirm] = useState<string | null>(null);
   const [renaming, setRenaming] = useState('');
