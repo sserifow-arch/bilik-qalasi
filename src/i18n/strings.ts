@@ -62,6 +62,7 @@ export const STR = S({
   cat_language: { az: 'Dil və sözlər', ru: 'Язык и слова', en: 'Words & language' },
   // viktorina
   question: { az: 'Sual', ru: 'Вопрос', en: 'Question' },
+  nQuestions: { az: '{n} sual', ru: 'Вопросов: {n}', en: '{n} questions' },
   correct: { az: 'Düzdür!', ru: 'Правильно!', en: 'Correct!' },
   praise: { az: 'Afərin!|Əla!|Super!|Möhtəşəm!|Bravo!', ru: 'Молодец!|Отлично!|Супер!|Здорово!|Браво!', en: 'Well done!|Great!|Super!|Awesome!|Bravo!' },
   wrong: { az: 'Bu dəfə alınmadı', ru: 'В этот раз не получилось', en: 'Not this time' },

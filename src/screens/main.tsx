@@ -375,7 +375,7 @@ export function WorldScreen({ id }: { id: string }) {
           const open = stageOpen(p.stages, list, i);
           const stars = p.stages[s.id] ?? 0;
           const label = s.kind === 'boss' ? t('boss') : t('stage', { n: i + 1 });
-          const sub = s.kind === 'game' ? `${GAME_EMOJI[s.game]} ${t(gameTitleKey(s.game))}` : s.kind === 'boss' ? '⚔️ 10 ' + t('question').toLowerCase() : `❓ ${s.n} ${t('question').toLowerCase()}`;
+          const sub = s.kind === 'game' ? `${GAME_EMOJI[s.game]} ${t(gameTitleKey(s.game))}` : s.kind === 'boss' ? '⚔️ ' + t('nQuestions', { n: 10 }) : '❓ ' + t('nQuestions', { n: s.n });
           return (
             <Card
               key={s.id}
