@@ -1,0 +1,6 @@
+{
+  "appId": "az.bilikqalasi.app",
+  "appName": "Bilik Qalası",
+  "webDir": "www",
+  "android": { "backgroundColor": "#5b8cff" }
+}
