@@ -1,0 +1,67 @@
+name: APK yığ (Build APK)
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Paketləri yüklə
+        run: npm install
+
+      - name: Android layihəsini yarat
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: İkonları qoy
+        run: |
+          node icons/make-icons.js
+          RES=android/app/src/main/res
+          rm -rf $RES/mipmap-anydpi-v26
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            cp icons/mipmap-$d/ic_launcher.png $RES/mipmap-$d/ic_launcher.png
+            cp icons/mipmap-$d/ic_launcher.png $RES/mipmap-$d/ic_launcher_round.png
+          done
+
+      - name: APK yığ
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: APK-ya ad ver
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk BilikQalasi.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BilikQalasi-apk
+          path: BilikQalasi.apk
+
+      - name: Releases-ə qoy (birbaşa endirmə linki)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Bilik Qalası v1.0.${{ github.run_number }}
+          body: "Telefona endirib quraşdırın: BilikQalasi.apk"
+          files: BilikQalasi.apk
+          make_latest: true
