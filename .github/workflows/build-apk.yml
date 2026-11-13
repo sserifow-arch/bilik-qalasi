@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: build
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,62 +27,13 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Paketləri yüklə
-        run: npm install
-
-      - name: Testlər
-        run: npm test
-
-      - name: Tip yoxlaması (TypeScript)
-        run: npm run typecheck
-
-      - name: Veb hissəni yığ
-        run: npm run build
-
-      - name: Android layihəsini yarat
-        run: |
-          npx cap add android
-          npx cap sync android
-
-      - name: İkonlar və versiya
-        run: |
-          node icons/make-icons.cjs
-          RES=android/app/src/main/res
-          rm -rf $RES/mipmap-anydpi-v26
-          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            cp icons/mipmap-$d/ic_launcher.png $RES/mipmap-$d/ic_launcher.png
-            cp icons/mipmap-$d/ic_launcher.png $RES/mipmap-$d/ic_launcher_round.png
-          done
-          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"2.0.${{ github.run_number }}\"/" android/app/build.gradle
-
-      - name: Release APK və AAB yığ
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleRelease bundleRelease
-
-      - name: İmzala
+      - name: Test, yığ və imzala
         env:
+          RUN_NUMBER: ${{ github.run_number }}
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-        run: |
-          BT=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
-          APK=android/app/build/outputs/apk/release/app-release-unsigned.apk
-          AAB=android/app/build/outputs/bundle/release/app-release.aab
-          if [ -n "$KS_B64" ]; then
-            echo "$KS_B64" | base64 -d > release.jks
-          else
-            echo "::notice::Sınaq açarı ilə imzalanır (signing/test-key.jks)"
-            cp signing/test-key.jks release.jks
-            KS_PASS=android; KS_ALIAS=brainykids
-          fi
-          $BT/zipalign -p -f 4 $APK aligned.apk
-          $BT/apksigner sign --ks release.jks --ks-pass pass:$KS_PASS --key-pass pass:$KS_PASS --ks-key-alias $KS_ALIAS --out BrainyKids.apk aligned.apk
-          $BT/apksigner verify BrainyKids.apk
-          jarsigner -keystore release.jks -storepass $KS_PASS -keypass $KS_PASS $AAB $KS_ALIAS
-          cp $AAB BrainyKids.aab
-          rm -f release.jks
+        run: bash scripts/ci-build.sh 2>&1 | tee ci.log
 
       - uses: actions/upload-artifact@v4
         with:
@@ -99,3 +54,17 @@ jobs:
             BrainyKids.apk
             BrainyKids.aab
           make_latest: true
+
+      - name: Jurnalı saxla (ci-logs budağı)
+        if: always()
+        run: |
+          mkdir -p /tmp/log && cp ci.log /tmp/log/ci.log 2>/dev/null || echo "jurnal yoxdur" > /tmp/log/ci.log
+          echo "run=${{ github.run_number }} status=${{ job.status }} sha=${{ github.sha }}" > /tmp/log/status.txt
+          tail -c 60000 /tmp/log/ci.log > /tmp/log/tail.log
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan ci-logs
+          git rm -rqf . || true
+          cp /tmp/log/status.txt /tmp/log/tail.log .
+          git add status.txt tail.log
+          git commit -qm "CI log ${{ github.run_number }}"
+          git push -qf origin ci-logs
