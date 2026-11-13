@@ -4,3 +4,4 @@ android/
 ios/
 *.keystore
 *.jks
+!signing/test-key.jks
